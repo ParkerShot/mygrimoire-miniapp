@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Дев-утилита: засеять состояние для QA-скриншотов. seed.html?state=app|onboarding|rich -->
+<meta charset="utf-8">
+<script>
+  const state = new URLSearchParams(location.search).get('state') || 'app'
+  const base = {
+    settings: { lang: 'ru', sound: true },
+    user: {
+      heroName: 'Странник', goal: 'Выковать железную дисциплину',
+      startedAt: new Date().toISOString(), chestLevel: 1, souls: 0,
+      totalEarned: 0, totalSpent: 0, totalBurned: 0, streak: 0, maxStreak: 0,
+      questsDone: 0, questsFailed: 0, lastFailedAt: null, lastActiveDay: null,
+      wasNegative: false, streakBroken: false,
+    },
+    quests: [], pleasures: [], earned: {},
+    freeze: { active: false, type: null, startedAt: null, days: 0, lastEndDay: null, lastRestDay: null, lastJourneyDay: null },
+    flags: { interceptDone: true, shopTutorStep: 5, questTutorSeen: true, freezeBubbleSeen: true, streakPopupDay: 0, chestFullShown: false, seenAchievements: [] },
+  }
+  if (state === 'onboarding') {
+    localStorage.removeItem('mygrimoire_v1')
+  } else {
+    if (state === 'rich') {
+      base.user.souls = 66; base.user.streak = 7; base.user.maxStreak = 7
+      base.user.questsDone = 12; base.user.totalEarned = 120; base.user.totalSpent = 54
+      base.quests = [
+        { id: 1, title: 'Пробежка 3 км', date: new Date().toISOString().slice(0, 10), done: false, createdAt: new Date().toISOString() },
+        { id: 2, title: 'Прочитать главу', date: new Date().toISOString().slice(0, 10), done: false, createdAt: new Date().toISOString() },
+      ]
+      base.pleasures = [
+        { id: 3, name: 'Вечер с сериалом', tier: 'small' },
+        { id: 4, name: 'Пицца', tier: 'medium' },
+        { id: 5, name: 'Выходной без дел', tier: 'large' },
+      ]
+      base.earned = { first_quest: new Date().toISOString(), quests_10: new Date().toISOString() }
+    }
+    localStorage.setItem('mygrimoire_v1', JSON.stringify({ state: base, version: 0 }))
+  }
+  // по умолчанию грузочный экран показывается честно; &skipLoading=1 — пропустить (для QA-скриншотов)
+  if (new URLSearchParams(location.search).get('skipLoading') === '1') {
+    sessionStorage.setItem('skip_loading', '1')
+  } else {
+    sessionStorage.removeItem('skip_loading')
+  }
+  const tab = new URLSearchParams(location.search).get('tab')
+  // прогрев кэша картинок, чтобы headless-скриншоты не гонялись с декодом
+  const warm = ['bg_dungeon','paper','btn_purple','plate_input','plate_square','plate_round','orb',
+    'chest_open','chest_closed','chest_gems','chest_wood','snowflake','flame','arrow_up','frost_overlay',
+    'ic_profile','ic_achievements','ic_quests','ic_shop','ic_gear'].map((n) => {
+    const i = new Image(); i.src = 'img/' + n + '.webp'
+    return i.decode().catch(() => {})
+  })
+  void warm // прогрев фоном; редирект сразу
+  location.replace('./' + (tab ? '?tab=' + tab : '') + (location.hash === '#debug' ? '?debug=1' : ''))
+</script>
